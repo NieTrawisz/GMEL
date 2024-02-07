@@ -19,6 +19,7 @@ FUNCTION
 #include <curand.h>
 #include <curand_kernel.h>
 #include <cuda_runtime.h>
+#include <corecrt_math_defines.h>
 
 #define F_KEY SPH
 #define F_NAME "Sphere"

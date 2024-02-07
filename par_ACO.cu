@@ -64,12 +64,12 @@ void icudaPrint(int * array, int elements, int n_jump){
 }
 
 __device__ int isInPath(int ciudad, int * recorrido, int n){
-  /* comprueba si la ciudad está en el recorrido.
-    n es la logitud del recorrido. puede ser la
-    longitud actual o la total
+  /* Check if the city is on the tour.
+    n is the logity of the route.It can be the
+    current or total length
 
-    Ojo, si la ciudad no está en la lista devilvemos uno.
-    Si está, 0. */
+    Eye, if the city is not on the list we devile one.
+    If it is, 0. */
   int i;
   int output = 1;
   for (i = 0; i<n; i++){
@@ -92,7 +92,7 @@ __global__ void init_rands(float * arr, curandState_t * states){
 }
 
 __global__ void init_A(float * a){
-  // N bloques, N hilos
+  // N blocks, n threads
   int id = blockIdx.x * blockDim.x + threadIdx.x;
   int i = threadIdx.x;
   int j = blockIdx.x;
@@ -111,63 +111,63 @@ __global__ void init_pos_actual(int * pos_actual){
 }
 
 __global__ void init_K(int * k){
-  // lanzamos un único hilo;
+  // We throw a single thread;
   *k = 0;
 }
 
-// Llena un array con un número x
+// Fill an array with an x number
 __global__ void fill(float * arr, float x){
   int id = blockIdx.x * blockDim.x + threadIdx.x;
   arr[id] = x;
 }
 
-// LLena un array con un entero x
+// Fill an array with an integer x
 __global__ void ifill(int * arr, int x){
   int id = blockIdx.x * blockDim.x + threadIdx.x;
   arr[id] = x;
 }
 
-// Toma la matriz de adyacencia, la de las feromonas, los caminos y generaremos
-// un array de NxN con las probabilidades de ir desde i hasta j
+// Takes the adjacency matrix, the pheromone matrix, and the paths, and generates
+// an array of NxN with the probabilities of going from i to j.
 __global__ void set_probs(float * a, float * f, int * path, int * pos_actual, float * out){
-  /* Asumimos que generaremos N bloques con N hilos */
-  /*
-    Cambiamos esta función, añadiendo un array de posición actual
-    para que puedan representarse los cambios de posición de las hormigas.
+/* We assume that we will generate N blocks with N threads */
+/*
+   We modify this function by adding an array for the current position
+   to represent the changes in the ants' positions.
 
-    Esto afecta al la lectura de la matriz de adyacencia, a la de feromonas
-    y también a los caminos. Para cambiar todo esto al mismo Tiempo
-    cambiaremos cómo se calcula la id. cambiaremos :
+   This affects the reading of the adjacency matrix, the pheromone matrix,
+   and also the paths. To change all of this at the same time,
+   we will change how the id is calculated. We will replace:
 
-            int id = blockIdx.x * blockDim.x + threadIdx.x;
-    por :
-        int id = pos_actual[blockIdx.x] * blockDim.x + threadIdx.x;
+           int id = blockIdx.x * blockDim.x + threadIdx.x;
+   with:
+       int id = pos_actual[blockIdx.x] * blockDim.x + threadIdx.x;
 
-    y así la información de las probabilidades se cargará ya con la información
-    de las ciudades de origen.
-  */
+   and thus, the probability information will be loaded with the information
+   of the origin cities.
+*/
   __shared__ int cities[N];
-  // La ciudad de destino que maneja este hilo
+  // The destination city that manages this thread
   int i = threadIdx.x;
   int id = pos_actual[blockIdx.x] * blockDim.x + threadIdx.x;
-  // Copiamos la ruta a la memoria compartida
-  //   Cuidado, que estas ciudades hay que cogerlas de la fila "buena" de paths, no de la edsplazada
+  // We copy the route to shared memory
+  // Care that these cities have to take them from the "good" row of Paths, not the edsplazada
   cities[i] = path[blockIdx.x * blockDim.x + threadIdx.x];
-  // Sincronizamos para que todos los hilos del bloque hayan copiado
+  // We synchronize so that all the threads of the block have copied
   __syncthreads();
-  // vemos si está en el camino. En este caso Id coincide con el número de ciudad
+  // We see if it is on the road.In this case ID coincides with the city number
   int taboo;
   taboo = isInPath(i, cities, N);
   //printf("%d\n", taboo);
-  // calculamos la probabilidad sin el denominador
+  // We calculate the probability without the denominator
   float prob;
   prob = __fmul_ru(__fdiv_ru(1,a[id]),f[id]);
   //printf("%d, %f\n", taboo, prob);
-  // calculamos el valor definitivo de la probabilidad
+  // We calculate the definitive value of probability
   /*
-  Ojito, que aquí no nos vale el id anterior, porque si no únicamente escribiríalojamos
-  en una única fila. Ahora tenemos que calcular el id de verdad, para que lo escriba
-  en el lugar correspondiente en la matriz de probabiliae
+  Ojito, that the previous id is not worth here, because if we will not only write it
+  in a single row. Now we have to calculate the real ID, to write it
+  in the corresponding place in the probability matrix
   */
   out[blockIdx.x * blockDim.x + threadIdx.x] = __fmul_ru(taboo, prob);
 }

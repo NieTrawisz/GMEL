@@ -19,6 +19,10 @@ FUNCTION
 #include <curand.h>
 #include <curand_kernel.h>
 #include <cuda_runtime.h>
+#include <corecrt_math_defines.h>
+#include <windows.h>
+
+#pragma comment(lib, "User32.lib")
 
 #define F_KEY SPH
 #define F_NAME "Sphere"
@@ -556,7 +560,7 @@ __global__ void roulette1(float * in, int n, int * out, float * rands){
       value += val;
     }
   }
-  // Rescatamos el valor del último elemento (n-1)
+  // We get the value of the last element (n-1)
   float max = __shfl(value, n-1);
   value = value/max;
   // Get a random value
@@ -574,8 +578,8 @@ __global__ void roulette1(float * in, int n, int * out, float * rands){
 }
 
 __global__ void roulette2(float * probs, int * leaders, int * out, float * rands){
-  /* N es el array con los datos de entradoa y N
-  el tamaño de dicho array */
+  /* N is the array with the input data and N
+  the size of said array */
   __shared__ int auxiliar;
   auxiliar = 0;
   //int i = threadIdx.x;
@@ -589,10 +593,10 @@ __global__ void roulette2(float * probs, int * leaders, int * out, float * rands
       value += val;
     }
   }
-  // Rescatamos el valor del último elemento (n-1)
+  // We get the value of the last element (n-1)
   float max = __shfl(value, 31);
   value = value/max;
-  // Conseguimos un valor aleatorio
+  // We get a random value
   float r;
   r = rands[blockIdx.x];
   bool brick = r > value;
@@ -615,18 +619,17 @@ __global__ void send_onlookers(float * onlookers, float * employees, int * desti
   onlookers[id] = employees[dest * N + j] + abs(r)/3 * (employees[k * N + j] - employees[dest * N + j]);
 }
 
-
-// Operación atómica que escribe el mínimo de un índice
-__device__ float atomicMaxIndex(int * array, int * address, int val){
-  int lo_que_tengo, lo_que_tenia;
-  lo_que_tengo = * address;
-  printf("(%d, %d), Esto : %f debe ser menor que esto %f\n", val, lo_que_tengo, array[val], array[lo_que_tengo]);
-  while (array[val] > array[lo_que_tengo]){
-    lo_que_tenia = lo_que_tengo;
-    lo_que_tengo = atomicCAS(address, lo_que_tenia, val);
-  }
-  return lo_que_tengo;
-}
+// // Atomic operation that writes the minimum of an index
+// __device__ float atomicMaxIndex(int * array, int * address, int val){
+//   int current_value, previous_value;
+//   current_value = * address;
+//   printf("(%d, %d), This: %f should be less than this %f\n", val, current_value, array[val], array[current_value]);
+//   while (array[val] > array[current_value]){
+//     previous_value = current_value;
+//     current_value = atomicCAS(address, previous_value, val);
+//   }
+//   return current_value;
+// }
 
 // Fills the array of changes
 //    in each block it looks for the best onlooker and save it in changes array
@@ -730,15 +733,15 @@ __global__ void test(float * arr){
 
 // Operación atómica que escribe el mínimo de un índice
 __device__ float atomicMinIndex(float * array, int * address, int val){
-  int lo_que_tengo, lo_que_tenia;
-  lo_que_tengo = * address;
+  int current_value, previous_value;
+  current_value = * address;
   //printf("Esto : %f debe ser menor que esto %f\n", array[val], array[lo_que_tengo]);
-  while (array[val] < array[lo_que_tengo]){
+  while (array[val] < array[current_value]){
     //printf("in %f\n", array[val]);
-    lo_que_tenia = lo_que_tengo;
-    lo_que_tengo = atomicCAS(address, lo_que_tenia, val);
+    previous_value = current_value;
+    current_value = atomicCAS(address, previous_value, val);
   }
-  return lo_que_tengo;
+  return current_value;
 }
 
 //  In this case we don't use the influence of the global minima. In addition
@@ -894,5 +897,6 @@ int main(void){
     cudaDeviceSynchronize();
     printf("\n");
     printf("\n");
+    while(!(GetKeyState(VK_SPACE) & 0x8000) & !(GetKeyState(VK_RETURN) & 0x8000));
     return 0;
 }
