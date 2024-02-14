@@ -19,7 +19,7 @@ FUNCTION
 #include <curand.h>
 #include <curand_kernel.h>
 #include <cuda_runtime.h>
-#include <corecrt_math_defines.h>
+// #include <corecrt_math_defines.h>
 
 #define F_KEY SPH
 #define F_NAME "Sphere"
@@ -636,6 +636,18 @@ int main(void){
   print_iMin<<<1,1>>>(pos);
 
   cudaDeviceSynchronize();
+
+  cudaFree(states);
+  cudaFree(ru01);
+  cudaFree(R);
+  cudaFree(crossings);
+  cudaFree(pos);
+  cudaFree(evals);
+  cudaFree(new_pos);
+  cudaFree(new_evals);
+
+  cudaDeviceSynchronize();
+
   printf("\n");
   printf("\n");
   return 0;

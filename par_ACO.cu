@@ -694,5 +694,21 @@ int main(void){
   printf("[-]    Dev  : %f\n", dev_cost);
 
   cudaDeviceSynchronize();
+
+  cudaFree(A);
+  cudaFree(K);
+  cudaFree(states);
+  cudaFree(rands);
+  cudaFree(F);
+  cudaFree(P);
+  cudaFree(pos_actual);
+  cudaFree(Probs);
+  cudaFree(Cost);
+  cudaFree(Steve);
+  cudaFree(wleaders);
+  cudaFree(winners);
+  
+  cudaDeviceSynchronize();
+
   return 0;
 }

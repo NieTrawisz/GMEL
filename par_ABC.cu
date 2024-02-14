@@ -19,8 +19,7 @@ FUNCTION
 #include <curand.h>
 #include <curand_kernel.h>
 #include <cuda_runtime.h>
-#include <corecrt_math_defines.h>
-#include <windows.h>
+// #include <corecrt_math_defines.h>
 
 #pragma comment(lib, "User32.lib")
 
@@ -895,8 +894,29 @@ int main(void){
     print_iMin<<<1,1>>>(employees);
 
     cudaDeviceSynchronize();
+
+    cudaFree(states);
+    cudaFree(ru01);
+    cudaFree(ru02);
+    cudaFree(rn01);
+    cudaFree(rn02);
+    cudaFree(crossings);
+    cudaFree(employees);
+    cudaFree(onlookers);
+    cudaFree(destinations);
+    cudaFree(new_sources);
+    cudaFree(efit);
+    cudaFree(ofit);
+    cudaFree(new_fit);
+    cudaFree(dest_fit);
+    cudaFree(warp_sums);
+    cudaFree(counter);
+    cudaFree(destination);
+    cudaFree(changes);
+
+    cudaDeviceSynchronize();
+
     printf("\n");
     printf("\n");
-    while(!(GetKeyState(VK_SPACE) & 0x8000) & !(GetKeyState(VK_RETURN) & 0x8000));
     return 0;
 }
